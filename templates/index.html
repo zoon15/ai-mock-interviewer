@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Mock Interviewer</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #f0f4f8;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 700px;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            color: #1a3a5c;
+        }
+
+        .header p {
+            color: #666;
+            margin-top: 8px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        /* Start Screen */
+        #start-screen input {
+            width: 100%;
+            padding: 14px 18px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            outline: none;
+            transition: border 0.2s;
+        }
+
+        #start-screen input:focus {
+            border-color: #1a3a5c;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: #1a3a5c;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 12px;
+            transition: background 0.2s;
+        }
+
+        .btn:hover { background: #2e5f8a; }
+        .btn:disabled { background: #aaa; cursor: not-allowed; }
+
+        /* Chat Screen */
+        #chat-screen { display: none; }
+
+        .progress {
+            text-align: center;
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+        }
+
+        .progress span {
+            font-weight: bold;
+            color: #1a3a5c;
+        }
+
+        .chat-box {
+            height: 400px;
+            overflow-y: auto;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #eee;
+            border-radius: 10px;
+        }
+
+        .message {
+            margin-bottom: 16px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message.interviewer { align-items: flex-start; }
+        .message.user { align-items: flex-end; }
+
+        .message-label {
+            font-size: 0.75rem;
+            color: #999;
+            margin-bottom: 4px;
+        }
+
+        .message-bubble {
+            max-width: 85%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+
+        .interviewer .message-bubble {
+            background: #f0f4f8;
+            color: #1a3a5c;
+            border-bottom-left-radius: 4px;
+        }
+
+        .user .message-bubble {
+            background: #1a3a5c;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .feedback-bubble {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 16px;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-row input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        .input-row input:focus { border-color: #1a3a5c; }
+
+        .send-btn {
+            padding: 12px 20px;
+            background: #1a3a5c;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: background 0.2s;
+        }
+
+        .send-btn:hover { background: #2e5f8a; }
+        .send-btn:disabled { background: #aaa; }
+
+        .error { color: red; font-size: 0.9rem; margin-top: 8px; }
+
+        .restart-btn {
+            width: 100%;
+            padding: 12px;
+            background: white;
+            color: #1a3a5c;
+            border: 2px solid #1a3a5c;
+            border-radius: 10px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 16px;
+            transition: all 0.2s;
+        }
+
+        .restart-btn:hover {
+            background: #1a3a5c;
+            color: white;
+        }
+
+        .typing {
+            color: #999;
+            font-style: italic;
+            font-size: 0.9rem;
+            padding: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎤 AI Mock Interviewer</h1>
+            <p>Practice your interview skills with AI — for any job role!</p>
+        </div>
+
+        <div class="card">
+            <!-- Start Screen -->
+            <div id="start-screen">
+                <h2 style="margin-bottom: 20px; color: #1a3a5c;">Let's get started!</h2>
+                <input type="text" id="job-role-input" placeholder="Enter job role (e.g. Software Engineer)" />
+                <p class="error" id="start-error"></p>
+                <button class="btn" onclick="startInterview()">Start Interview 🚀</button>
+            </div>
+
+            <!-- Chat Screen -->
+            <div id="chat-screen">
+                <div class="progress">Question <span id="q-count">1</span> of 5</div>
+                <div class="chat-box" id="chat-box"></div>
+                <div class="input-row">
+                    <input type="text" id="answer-input" placeholder="Type your answer..." onkeypress="handleKey(event)" />
+                    <button class="send-btn" id="send-btn" onclick="submitAnswer()">➤</button>
+                </div>
+                <p class="error" id="chat-error"></p>
+                <button class="restart-btn" onclick="restartInterview()">🔄 Start New Interview</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function addMessage(role, text, isFeedback = false) {
+            const chatBox = document.getElementById("chat-box");
+            const div = document.createElement("div");
+            div.className = `message ${role}`;
+
+            const label = document.createElement("div");
+            label.className = "message-label";
+            label.textContent = role === "interviewer" ? "🎙️ Interviewer" : "👤 You";
+
+            const bubble = document.createElement("div");
+            bubble.className = isFeedback ? "feedback-bubble" : "message-bubble";
+            bubble.textContent = text;
+
+            div.appendChild(label);
+            div.appendChild(bubble);
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function addTyping() {
+            const chatBox = document.getElementById("chat-box");
+            const div = document.createElement("div");
+            div.className = "typing";
+            div.id = "typing-indicator";
+            div.textContent = "🎙️ Interviewer is typing...";
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function removeTyping() {
+            const el = document.getElementById("typing-indicator");
+            if (el) el.remove();
+        }
+
+        async function startInterview() {
+            const jobRole = document.getElementById("job-role-input").value.trim();
+            const errorEl = document.getElementById("start-error");
+
+            if (!jobRole) {
+                errorEl.textContent = "Please enter a job role!";
+                return;
+            }
+
+            errorEl.textContent = "";
+            document.querySelector(".btn").disabled = true;
+            document.querySelector(".btn").textContent = "Starting...";
+
+            const response = await fetch("/start", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ job_role: jobRole })
+            });
+
+            const data = await response.json();
+
+            if (data.error) {
+                errorEl.textContent = data.error;
+                document.querySelector(".btn").disabled = false;
+                document.querySelector(".btn").textContent = "Start Interview 🚀";
+                return;
+            }
+
+            document.getElementById("start-screen").style.display = "none";
+            document.getElementById("chat-screen").style.display = "block";
+            addMessage("interviewer", data.message);
+        }
+
+        async function submitAnswer() {
+            const input = document.getElementById("answer-input");
+            const answer = input.value.trim();
+            const errorEl = document.getElementById("chat-error");
+            const sendBtn = document.getElementById("send-btn");
+
+            if (!answer) {
+                errorEl.textContent = "Please type an answer!";
+                return;
+            }
+
+            errorEl.textContent = "";
+            addMessage("user", answer);
+            input.value = "";
+            sendBtn.disabled = true;
+            addTyping();
+
+            const response = await fetch("/answer", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ answer: answer })
+            });
+
+            const data = await response.json();
+            removeTyping();
+            sendBtn.disabled = false;
+
+            if (data.error) {
+                errorEl.textContent = data.error;
+                return;
+            }
+
+            const isFeedback = data.interview_complete;
+            addMessage("interviewer", data.message, isFeedback);
+
+            if (!isFeedback) {
+                document.getElementById("q-count").textContent = data.question_count;
+            } else {
+                document.getElementById("q-count").textContent = "Done!";
+                input.disabled = true;
+                sendBtn.disabled = true;
+            }
+        }
+
+        function handleKey(event) {
+            if (event.key === "Enter") submitAnswer();
+        }
+
+        function restartInterview() {
+            document.getElementById("start-screen").style.display = "block";
+            document.getElementById("chat-screen").style.display = "none";
+            document.getElementById("chat-box").innerHTML = "";
+            document.getElementById("job-role-input").value = "";
+            document.getElementById("answer-input").disabled = false;
+            document.getElementById("send-btn").disabled = false;
+            document.querySelector(".btn").disabled = false;
+            document.querySelector(".btn").textContent = "Start Interview 🚀";
+            document.getElementById("q-count").textContent = "1";
+        }
+    </script>
+</body>
+</html>
