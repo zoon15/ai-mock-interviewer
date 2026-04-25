@@ -28,10 +28,11 @@ def call_ai(conversation):
     for attempt in range(3):
         try:
             response = client.chat.complete(
-                model="mistral-large-latest",
-                messages=conversation,
-                max_tokens=500,
-                temperature=0.7
+            model="mistral-small-latest",
+            messages=conversation,
+            max_tokens=300,
+            temperature=0.7
+)
             )
             return clean_response(response.choices[0].message.content)
         except Exception as e:
